@@ -1,0 +1,30 @@
+# ─────────────────────────────────────────────
+# HandStats+ — Gitignore global
+# ─────────────────────────────────────────────
+
+# Environment
+.env
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+mongo-data/
+
+# Node
+node_modules/
+
+# Java
+*.class
+target/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
