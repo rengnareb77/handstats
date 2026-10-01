@@ -1,40 +1,43 @@
 """
 Routes du Parser Service.
 """
-import io
-
-from fastapi import APIRouter, File, HTTPException, UploadFile
-
-from app.services.pdf_extractor import extract_match_data
-
+from fastapi import APIRouter, File, HTTPException, UploadFile,Form
+from app.services.pdf_extractor import parse_pdf
 parser_router = APIRouter()
 
 
 @parser_router.post("/parse")
-async def parse_match_sheet(file: UploadFile = File(...)):
+async def parse_match_sheet(file: UploadFile | None = File(None),url: str | None = Form(None)):
     """
     Reçoit un PDF (feuille de match FDME), extrait les tableaux
     et retourne un format structuré JSON.
     """
-    if not file.filename or not file.filename.lower().endswith(".pdf"):
+    if file is not None:
+        if not file.filename or not file.filename.lower().endswith(".pdf"):
+            raise HTTPException(
+                status_code=400,
+                detail="Le fichier doit être un PDF (.pdf)",
+            )
+        file_content = file.file.read()
+    elif url is not None:
+        import urllib.request
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req) as response:
+                file_content = response.read()
+        except Exception:
+            raise HTTPException(status_code=400, detail="Impossible de télécharger le PDF depuis l'URL")
+    else:
         raise HTTPException(
             status_code=400,
-            detail="Le fichier doit être un PDF (.pdf)",
+            detail="Vous devez fournir un fichier ou une URL",
         )
-
-    contents = await file.read()
-    pdf_stream = io.BytesIO(contents)
-
     try:
-        data = extract_match_data(pdf_stream)
-    except Exception as e:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Erreur lors du parsing du PDF : {str(e)}",
-        )
+        result = parse_pdf(file_content)
 
-    return {
-        "filename": file.filename,
-        "status": "parsed",
-        "data": data,
-    }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors du traitement du PDF: {str(e)}")
+
+    return result
+
+
