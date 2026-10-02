@@ -58,11 +58,12 @@ def get_info_from_df(df: pd.DataFrame) -> tuple[list[MatchPlayer], list[MatchPla
     return _extract_players_from_df(home_df), _extract_players_from_df(away_df)
 
 
-def get_team_from_table(header_text: str) -> tuple[str, str]:
+def get_team_from_table(header_text: str) -> tuple[str,str, str]:
     """Extrait le nom des deux équipes depuis l'en-tête de la page."""
     lines = header_text.split("\n")
     teams = lines[9].split("/")
-    return teams[0].strip(), teams[1].strip()
+    id_rencontre = lines[3]
+    return id_rencontre, teams[0].strip(), teams[1].strip()
 
 
 def get_events_from_text(evenements: str) -> list[MatchEvent]:
@@ -149,7 +150,7 @@ def parse_pdf(file) -> Match:
         lines = page1_text.splitlines()
 
         header1 = "\n".join(lines[:12])
-        homeTeamName, awayTeamName = get_team_from_table(header1)
+        id_rencontre,homeTeamName, awayTeamName = get_team_from_table(header1)
 
         if number_of_pages == 4 or number_of_pages == 3 and first_page_overflow:
             page2_text = doc[1].get_text("text")
@@ -173,7 +174,7 @@ def parse_pdf(file) -> Match:
     events = get_events_from_text(evenements)
 
     return Match(
-        id="J2", # FIXME: Déterminer comment générer un vrai ID
+        id=id_rencontre,
         homeTeamName=homeTeamName,
         awayTeamName=awayTeamName,
         homeTeamPlayers=homePlayers,
