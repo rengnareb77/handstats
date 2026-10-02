@@ -28,7 +28,7 @@ class MatchEvent(BaseModel):
   sector: Literal["WING_L","WING_R","CENTER","PIVOT","BACK_L","BACK_R","GOALKEEPER"] | None = None
 
 class Match(BaseModel):
-  id:str
+  codeRencontre:str
   homeTeamName:str
   awayTeamName:str
   homeScore:Score
