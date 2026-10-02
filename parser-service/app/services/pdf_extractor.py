@@ -174,7 +174,7 @@ def parse_pdf(file) -> Match:
     events = get_events_from_text(evenements)
 
     return Match(
-        codeRencontre=id_rencontre,
+        codeRencontre=codeRencontre,
         homeTeamName=homeTeamName,
         awayTeamName=awayTeamName,
         homeTeamPlayers=homePlayers,

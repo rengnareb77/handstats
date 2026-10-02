@@ -36,6 +36,7 @@ async def parse_match_sheet(file: UploadFile | None = File(None),url: str | None
         result = parse_pdf(file_content)
 
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail=f"Erreur lors du traitement du PDF: {str(e)}")
 
     return result
