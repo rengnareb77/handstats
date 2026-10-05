@@ -11,6 +11,7 @@ data class Team(
     @Id
     val id: String? = null,
     val name: String,
+    val championship: String,
     @DocumentReference
     val players: List<Player> = emptyList(),
     @DocumentReference

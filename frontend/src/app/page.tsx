@@ -1,42 +1,31 @@
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  AddTeamIcon,
-  ChevronRightIcon,
-} from "@hugeicons/core-free-icons";
+import { ChevronRightIcon } from "@hugeicons/core-free-icons";
 
 import { Header } from "@/components/header";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
-
-/* ─── Données factices ─── */
-const MOCK_TEAMS = [
-  { id: "1", name: "INAM SG", shortName: "SG", championship: "Départementale 2" },
-];
+import { teamService } from "@/lib/services/team.services";
+import { AddTeamDialog } from "@/components/add-team-dialog";
+import { Team } from "@/types/team.types";
 
 /**
  * Page d'accueil — Mobile-first.
  * Sélection d'une équipe parmi la liste.
+ * (Server Component)
  */
-export default function HomePage() {
-  const router = useRouter();
-  const [dialogOpen, setDialogOpen] = useState(false);
+export default async function HomePage() {
+  let teams: Team[] = [];
+
+  // Récupération des équipes côté serveur
+  try {
+    const fetchedTeams = await teamService.getAll(true);
+    if (fetchedTeams && fetchedTeams.length > 0) {
+      teams = fetchedTeams;
+    }
+  } catch (error) {
+    console.error("Erreur lors de la récupération des équipes (SSR):", error);
+  }
 
   return (
     <main className="flex-1 flex flex-col min-h-dvh">
@@ -68,44 +57,36 @@ export default function HomePage() {
 
         {/* ─── Team List ─── */}
         <div className="flex flex-col gap-3">
-          {MOCK_TEAMS.map((team) => (
-            <Card
+          {teams.map((team) => (
+            <Link
               key={team.id}
-              size="sm"
-              className="group relative cursor-pointer transition-all duration-200 ease-out hover:bg-muted/50 hover:ring-border active:scale-[0.98]"
-              onClick={() =>
-                router.push(`/equipe/${team.shortName.toLowerCase()}`)
-              }
+              href={`/equipe/${team.id}`}
+              className="outline-none ring-primary focus-visible:ring-2 rounded-2xl"
             >
-              <div className="flex items-center gap-4 px-4 py-1">
-                {/* Avatar */}
-                <Avatar
-                  size="lg"
-                  className="transition-transform duration-200 group-hover:scale-105"
-                >
-                  <AvatarFallback className="rounded-full text-xs font-bold">
-                    {team.shortName.slice(0, 3)}
-                  </AvatarFallback>
-                </Avatar>
+              <Card
+                size="sm"
+                className="group relative cursor-pointer transition-all duration-200 ease-out hover:bg-muted/50 hover:ring-border active:scale-[0.98]"
+              >
+                <div className="flex items-center gap-4 px-5 py-3">
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-base font-bold truncate text-card-foreground tracking-tight">
+                      {team.name}
+                    </p>
+                    <p className="text-[13px] text-muted-foreground mt-0.5 font-medium">
+                      {team.championship}
+                    </p>
+                  </div>
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-[15px] font-semibold truncate text-card-foreground">
-                    {team.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {team.championship}
-                  </p>
+                  {/* Chevron */}
+                  <HugeiconsIcon
+                    icon={ChevronRightIcon}
+                    size={18}
+                    className="shrink-0 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors"
+                  />
                 </div>
-
-                {/* Chevron */}
-                <HugeiconsIcon
-                  icon={ChevronRightIcon}
-                  size={18}
-                  className="shrink-0 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors"
-                />
-              </div>
-            </Card>
+              </Card>
+            </Link>
           ))}
         </div>
 
@@ -119,59 +100,7 @@ export default function HomePage() {
         </div>
 
         {/* ─── Add Team Button + Dialog ─── */}
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger
-            render={
-              <Button
-                variant="outline"
-                size="lg"
-                className="w-full gap-3 border-dashed border-2 text-muted-foreground hover:text-primary hover:border-primary/40 h-14 rounded-2xl"
-              >
-                <HugeiconsIcon icon={AddTeamIcon} size={22} />
-                Ajouter une équipe
-              </Button>
-            }
-          />
-
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Nouvelle équipe</DialogTitle>
-              <DialogDescription>
-                Créez une nouvelle équipe pour suivre ses statistiques.
-              </DialogDescription>
-            </DialogHeader>
-
-            <form
-              className="flex flex-col gap-5 py-4"
-              onSubmit={(e) => {
-                e.preventDefault();
-                setDialogOpen(false);
-              }}
-            >
-              <div className="flex flex-col gap-2.5">
-                <Label htmlFor="name">Nom de l'équipe</Label>
-                <Input id="name" placeholder="Ex: INAM SG" required />
-              </div>
-              <div className="flex flex-col gap-2.5">
-                <Label htmlFor="championship">Championnat</Label>
-                <Input id="championship" placeholder="Ex: Nationale 2" required />
-              </div>
-
-              <DialogFooter className="mt-2 sm:mt-4">
-                <DialogClose
-                  render={
-                    <Button type="button" variant="outline" className="w-full sm:w-auto">
-                      Annuler
-                    </Button>
-                  }
-                />
-                <Button type="submit" className="w-full sm:w-auto">
-                  Créer l'équipe
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <AddTeamDialog />
       </section>
     </main>
   );

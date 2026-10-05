@@ -1,6 +1,3 @@
-"use client";
-
-import { use } from "react";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -65,12 +62,12 @@ const POSITION_COLORS: Record<Position, string> = {
 /**
  * Page joueurs — liste de l'effectif d'une équipe.
  */
-export default function JoueursPage({
+export default async function JoueursPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = use(params);
+  const { id } = await params;
 
   /* Trier par nom */
   const sortedPlayers = [...MOCK_PLAYERS].sort((a, b) => a.name.localeCompare(b.name));

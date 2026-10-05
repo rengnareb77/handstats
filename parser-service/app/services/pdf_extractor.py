@@ -58,15 +58,17 @@ def get_info_from_df(df: pd.DataFrame) -> tuple[list[MatchPlayer], list[MatchPla
     return _extract_players_from_df(home_df), _extract_players_from_df(away_df)
 
 
-def get_team_from_table(header_text: str) -> tuple[str,str, str]:
+def get_team_from_table(header_text: str) -> tuple[str,str, str,str]:
     """Extrait le nom des deux équipes depuis l'en-tête de la page."""
     lines = header_text.split("\n")
     teams = lines[9].split("/")
     code_rencontre = lines[3]
-    return code_rencontre, teams[0].strip(), teams[1].strip()
+    date = lines[13].split(" ")
+    final_date = date[1] + " " + date[2]
+    return code_rencontre, teams[0].strip(), teams[1].strip(), final_date
 
 
-def get_events_from_text(evenements: str) -> list[MatchEvent]:
+def get_events_from_text(evenements: str, home_players: list[MatchPlayer], away_players: list[MatchPlayer]) -> list[MatchEvent]:
     """Extrait et structure les événements de match depuis le texte brut."""
     list_events = evenements.split("\n")
 
@@ -103,11 +105,16 @@ def get_events_from_text(evenements: str) -> list[MatchEvent]:
 
         time = e[0]
         action = e[2]
+        if time == "01:00:00": time = "60:00"
 
         for prefix, event_type in action_mapping.items():
             if action.startswith(prefix):
                 name = action.replace(prefix, "", 1).strip()
-                events.append(MatchEvent(time=time, type=event_type, matchPlayerName=name))
+                # Déterminer l'équipe du joueur
+                team = "HOME" if name in [player.fullName for player in home_players] else "AWAY"
+                if prefix == "Temps mort":
+                    team = "HOME" if name == "Recevant" else "AWAY"
+                events.append(MatchEvent(team=team, time=time, type=event_type, matchPlayerName=name))
                 break
 
     return events
@@ -148,9 +155,8 @@ def parse_pdf(file) -> Match:
         number_of_pages = len(doc)
         page1_text = doc[0].get_text("text")
         lines = page1_text.splitlines()
-
-        header1 = "\n".join(lines[:12])
-        codeRencontre,homeTeamName, awayTeamName = get_team_from_table(header1)
+        header1 = "\n".join(lines[:14])
+        codeRencontre,homeTeamName, awayTeamName,date = get_team_from_table(header1)
 
         if number_of_pages == 4 or number_of_pages == 3 and first_page_overflow:
             page2_text = doc[1].get_text("text")
@@ -171,7 +177,7 @@ def parse_pdf(file) -> Match:
     evenements_lines = evenements.splitlines()
     evenements = "\n".join(evenements_lines[12:])
 
-    events = get_events_from_text(evenements)
+    events = get_events_from_text(evenements,homePlayers,awayPlayers)
 
     return Match(
         codeRencontre=codeRencontre,
@@ -181,7 +187,8 @@ def parse_pdf(file) -> Match:
         awayTeamPlayers=awayPlayers,
         homeScore=homeScore,
         awayScore=awayScore,
-        events=events
+        events=events,
+        date=date,
     )
 
 if __name__ == "__main__":

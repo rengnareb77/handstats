@@ -19,10 +19,9 @@ class MatchPlayer(BaseModel):
   twoMinutes:int
   redCard:bool
 
-
-
 class MatchEvent(BaseModel):
   type:Literal["GOAL","SEVEN_METER","TWO_MINUTE","YELLOW_CARD","RED_CARD","SAVE","SHOT","TIMEOUT"]
+  team:Literal["HOME","AWAY"]
   time:str
   matchPlayerName:str
   sector: Literal["WING_L","WING_R","CENTER","PIVOT","BACK_L","BACK_R","GOALKEEPER"] | None = None
@@ -30,6 +29,7 @@ class MatchEvent(BaseModel):
 class Match(BaseModel):
   codeRencontre:str
   homeTeamName:str
+  date:str
   awayTeamName:str
   homeScore:Score
   awayScore:Score
