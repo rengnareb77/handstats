@@ -5,8 +5,9 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["192.168.1.48"],
 
   async rewrites() {
-    const parserUrl = process.env.PARSER_API_URL || "http://localhost:8000";
-    const coreUrl = process.env.CORE_API_URL || "http://localhost:8080";
+    const isProd = process.env.NODE_ENV === "production";
+    const parserUrl = process.env.PARSER_API_URL || (isProd ? "http://parser-service:8000" : "http://localhost:8000");
+    const coreUrl = process.env.CORE_API_URL || (isProd ? "http://core-api:8080" : "http://localhost:8080");
     
     return [
       {
