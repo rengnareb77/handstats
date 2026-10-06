@@ -3,7 +3,7 @@ services:
   # Frontend PWA — Next.js (Production)
   # ─────────────────────────────────────────────
   frontend:
-    image: ${REGISTRY_URL:-ghcr.io/github_username/handstats-frontend}:latest
+    image: ${REGISTRY_URL:-ghcr.io/github_username}/handstats-frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
@@ -24,7 +24,7 @@ services:
   # Core API — Spring Boot (Java 21)
   # ─────────────────────────────────────────────
   core-api:
-    image: ${REGISTRY_URL:-ghcr.io/github_username/handstats-core-api}:latest
+    image: ${REGISTRY_URL:-ghcr.io/github_username}/handstats-core-api:latest
     build:
       context: ./core-api
       dockerfile: Dockerfile
@@ -44,7 +44,7 @@ services:
   # Parser Service — FastAPI (Python)
   # ─────────────────────────────────────────────
   parser-service:
-    image: ${REGISTRY_URL:-ghcr.io/github_username/handstats-parser-service}:latest
+    image: ${REGISTRY_URL:-ghcr.io/github_username}/handstats-parser-service:latest
     build:
       context: ./parser-service
       dockerfile: Dockerfile.prod
