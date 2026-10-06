@@ -1,0 +1,75 @@
+services:
+  # ─────────────────────────────────────────────
+  # Frontend PWA — Next.js (Production)
+  # ─────────────────────────────────────────────
+  frontend:
+    image: ${REGISTRY_URL:-ghcr.io/github_username/handstats-frontend}:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    ports:
+      - "3000:3000"
+    environment:
+      # We set this to /api so client-side requests go through Next.js proxy
+      - NEXT_PUBLIC_API_URL=/api
+      - CORE_API_URL=http://core-api:8080
+      - PARSER_API_URL=http://parser-service:8000
+    depends_on:
+      - core-api
+    networks:
+      - handstats-network
+    restart: always
+
+  # ─────────────────────────────────────────────
+  # Core API — Spring Boot (Java 21)
+  # ─────────────────────────────────────────────
+  core-api:
+    image: ${REGISTRY_URL:-ghcr.io/github_username/handstats-core-api}:latest
+    build:
+      context: ./core-api
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/handstats
+      - PARSER_SERVICE_URL=http://parser-service:8000
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+    depends_on:
+      - mongo
+    networks:
+      - handstats-network
+    restart: always
+
+  # ─────────────────────────────────────────────
+  # Parser Service — FastAPI (Python)
+  # ─────────────────────────────────────────────
+  parser-service:
+    image: ${REGISTRY_URL:-ghcr.io/github_username/handstats-parser-service}:latest
+    build:
+      context: ./parser-service
+      dockerfile: Dockerfile.prod
+    ports:
+      - "8000:8000"
+    networks:
+      - handstats-network
+    restart: always
+
+  # ─────────────────────────────────────────────
+  # Database — MongoDB
+  # ─────────────────────────────────────────────
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - handstats-network
+    restart: always
+
+networks:
+  handstats-network:
+    driver: bridge
+
+volumes:
+  mongo-data:

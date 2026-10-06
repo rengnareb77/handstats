@@ -9,8 +9,9 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8080/api
-      - CORE_API_URL=http://core-api:8080/api
+      - NEXT_PUBLIC_API_URL=/api
+      - CORE_API_URL=http://core-api:8080
+      - PARSER_API_URL=http://parser-service:8000
     depends_on:
       - core-api
     networks:
