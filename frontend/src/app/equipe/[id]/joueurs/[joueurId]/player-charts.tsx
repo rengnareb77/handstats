@@ -13,7 +13,7 @@ import {
   LineChart, 
   Line
 } from "recharts";
-import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 
 export function PlayerCharts({ 
   matches, 
@@ -36,7 +36,7 @@ export function PlayerCharts({
 
   if (chartData.length === 0) return null;
 
-  const chartConfig = isGoalkeeper 
+  const chartConfig: ChartConfig = isGoalkeeper 
     ? { Arrêts: { label: "Arrêts", color: "var(--color-chart-3)" } }
     : { 
         Buts: { label: "Buts", color: "var(--color-chart-3)" },

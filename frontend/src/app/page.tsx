@@ -14,6 +14,8 @@ import { Team } from "@/types/team.types";
  * Sélection d'une équipe parmi la liste.
  * (Server Component)
  */
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   let teams: Team[] = [];
 
