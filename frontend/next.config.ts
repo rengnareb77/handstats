@@ -5,18 +5,21 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["192.168.1.48"],
 
   async rewrites() {
+    const parserUrl = process.env.PARSER_API_URL || "http://localhost:8000";
+    const coreUrl = process.env.CORE_API_URL || "http://localhost:8080";
+    
     return [
       {
         source: "/api/parse",
-        destination: "http://localhost:8000/api/parse", // Envoi vers le microservice parser
+        destination: `${parserUrl}/api/parse`, // Envoi vers le microservice parser
       },
       {
         source: "/api/parse/:path*",
-        destination: "http://localhost:8000/api/parse/:path*", // Envoi vers le microservice parser
+        destination: `${parserUrl}/api/parse/:path*`, // Envoi vers le microservice parser
       },
       {
         source: "/api/:path*",
-        destination: "http://localhost:8080/:path*", // Envoi vers le microservice core
+        destination: `${coreUrl}/:path*`, // Envoi vers le microservice core
       },
     ];
   },

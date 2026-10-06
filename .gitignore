@@ -2,6 +2,7 @@
 # HandStats+ — Gitignore global
 # ─────────────────────────────────────────────
 
+draft/
 # Environment
 .env
 
