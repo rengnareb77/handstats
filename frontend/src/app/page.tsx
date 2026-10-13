@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ChevronRightIcon } from "@hugeicons/core-free-icons";
@@ -8,6 +9,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { teamService } from "@/lib/services/team.services";
 import { AddTeamDialog } from "@/components/add-team-dialog";
 import { Team } from "@/types/team.types";
+
+export const metadata: Metadata = {
+  title: "Mes équipes | HandStats+",
+  description: "Sélectionnez ou créez une équipe pour suivre ses statistiques de handball.",
+};
 
 /**
  * Page d'accueil — Mobile-first.
@@ -21,7 +27,7 @@ export default async function HomePage() {
 
   // Récupération des équipes côté serveur
   try {
-    const fetchedTeams = await teamService.getAll(true);
+    const fetchedTeams = await teamService.getAll();
     if (fetchedTeams && fetchedTeams.length > 0) {
       teams = fetchedTeams;
     }

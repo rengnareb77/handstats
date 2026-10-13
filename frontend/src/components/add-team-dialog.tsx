@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { AddTeamIcon } from "@hugeicons/core-free-icons";
 
-import { teamService } from "@/lib/services/team.services";
+import { createTeamAction } from "@/actions/team.actions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,15 +19,20 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Team } from "@/types/team.types";
 
 export function AddTeamDialog() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const router = useRouter();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   return (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+    <Dialog
+      open={dialogOpen}
+      onOpenChange={(open) => {
+        setDialogOpen(open);
+        if (!open) setErrorMessage(null);
+      }}
+    >
       <DialogTrigger
         render={
           <Button
@@ -55,25 +59,33 @@ export function AddTeamDialog() {
           onSubmit={async (e) => {
             e.preventDefault();
             setIsSubmitting(true);
+            setErrorMessage(null);
+
             const formData = new FormData(e.currentTarget);
             const name = formData.get("name") as string;
             const championship = formData.get("championship") as string;
-            const team = {
-              name: name,
-              championship: championship
-            }
 
             try {
-              await teamService.create(team, false);
-              setDialogOpen(false);
-              router.refresh(); // Rafraîchit les Server Components (dont la liste des équipes)
+              const result = await createTeamAction({ name, championship });
+              if (result.success) {
+                setDialogOpen(false);
+              } else {
+                setErrorMessage(result.error || "Erreur lors de la création de l'équipe");
+              }
             } catch (error) {
-              console.error("Erreur lors de la création de l'équipe:", error);
+              setErrorMessage(
+                error instanceof Error ? error.message : "Erreur inattendue"
+              );
             } finally {
               setIsSubmitting(false);
             }
           }}
         >
+          {errorMessage && (
+            <div className="text-sm font-medium text-destructive bg-destructive/10 border border-destructive/20 p-3 rounded-xl">
+              {errorMessage}
+            </div>
+          )}
           <div className="flex flex-col gap-2.5">
             <Label htmlFor="name">Nom de l'équipe</Label>
             <Input id="name" name="name" placeholder="Ex: INAM SG" required />
