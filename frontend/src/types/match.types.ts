@@ -2,6 +2,9 @@ export interface Match {
     codeRencontre: string;
     homeTeamName: string;
     awayTeamName: string;
+    homeTeamId?: string;
+    awayTeamId?: string;
+    championshipId?: string;
     date: string;
     homeScore: Score;
     awayScore: Score;
@@ -10,6 +13,7 @@ export interface Match {
     events: MatchEvent[];
     isHome?: boolean;
 }
+
 
 export interface Score {
     halfScore: number;

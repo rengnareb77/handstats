@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Target01Icon,
@@ -9,7 +11,28 @@ import { Header } from "@/components/header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { playerService } from "@/lib/services/player.services";
+import { teamService } from "@/lib/services/team.services";
+import { calculatePlayerStats } from "@/lib/player-stats";
+import { Match } from "@/types/match.types";
 import { PlayerCharts } from "./player-charts";
+
+interface PageProps {
+  params: Promise<{ id: string; joueurId: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { joueurId } = await params;
+  try {
+    const player = await playerService.getPlayerById(joueurId);
+    if (!player) return { title: "Joueur non trouvé | HandStats+" };
+    return {
+      title: `${player.fullName} | HandStats+`,
+      description: `Fiche joueur et statistiques individuelles de ${player.fullName}`,
+    };
+  } catch {
+    return { title: "Détail du joueur | HandStats+" };
+  }
+}
 
 // ==========================================
 // HELPERS
@@ -23,44 +46,45 @@ function parseDate(dateStr: string) {
   return new Date(Number(y), Number(m) - 1, Number(d), Number(h), Number(min));
 }
 
-export default async function JoueurDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string; joueurId: string }>;
-}) {
+export default async function JoueurDetailPage({ params }: PageProps) {
   const { id, joueurId } = await params;
-  const player = await playerService.getPlayerById(joueurId, true);
-
-  if (!player) {
-    return (
-      <main className="flex-1 flex flex-col min-h-dvh">
-        <Header backHref={`/equipe/${id}`} title="Joueur introuvable" />
-        <section className="flex-1 flex items-center justify-center">
-          <p className="text-muted-foreground">Ce joueur n&apos;existe pas.</p>
-        </section>
-      </main>
-    );
+  let player;
+  let teamMatches: Match[] = [];
+  try {
+    const [fetchedPlayer, fetchedMatches] = await Promise.all([
+      playerService.getPlayerById(joueurId),
+      teamService.getTeamMatch(id).catch(() => []),
+    ]);
+    player = fetchedPlayer;
+    teamMatches = fetchedMatches || [];
+  } catch {
+    notFound();
   }
 
-  // Calculation of player stats
+  if (!player) {
+    notFound();
+  }
+
+  // Unified and robust calculation of player stats & matches
+  const {
+    playerMatches,
+    matchesPlayed,
+    totalGoals,
+    totalShots,
+    totalSaves,
+    goalsPerMatch,
+    savesPerMatch,
+    isGoalkeeper,
+    precision,
+  } = calculatePlayerStats(player, teamMatches);
+
   const names = player.fullName.split(" ");
   const firstName = names[0];
   const name = names.slice(1).join(" ") || "";
   const initials = player.fullName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
 
-  const totalGoals = player.stats.goal;
-  const totalShots = Math.max(player.stats.shot, totalGoals);
-  const totalSaves = player.stats.save;
-  const matchesPlayed = player.matchs?.length || 0;
-  
-  const goalsPerMatch = matchesPlayed > 0 ? (totalGoals / matchesPlayed) : 0;
-  const savesPerMatch = matchesPlayed > 0 ? (totalSaves / matchesPlayed) : 0;
-
-  const isGoalkeeper = totalSaves > 0 && totalGoals === 0;
-  const precision = totalShots > 0 ? Math.round((totalGoals / totalShots) * 100) : null;
-
   // For recentMatches, sort by date descending
-  const sortedMatches = [...(player.matchs || [])].sort(
+  const sortedMatches = [...playerMatches].sort(
     (a, b) => parseDate(b.date).getTime() - parseDate(a.date).getTime()
   );
 

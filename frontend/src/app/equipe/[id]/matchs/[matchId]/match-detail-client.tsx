@@ -45,7 +45,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Match, MatchEvent } from "@/types/match.types";
 import { Team } from "@/types/team.types";
-import { matchService } from "@/lib/services/match.services";
+import { addMatchEventAction, updateMatchEventAction } from "@/actions/match.actions";
 
 /* ─── Types locaux ─── */
 type LocalMatchEvent = MatchEvent & { id: string };
@@ -116,7 +116,11 @@ export function MatchDetailClient({ match, teamId, team }: { match: Match; teamI
     };
 
     try {
-      await matchService.addEventToMatch(match.codeRencontre, newEventData);
+      const result = await addMatchEventAction(match.codeRencontre, teamId, newEventData);
+      if (!result.success) {
+        console.error("Failed to add event", result.error);
+        return;
+      }
       const newEvent: LocalMatchEvent = {
         ...newEventData,
         id: `local-e${nextId++}`,
@@ -152,8 +156,11 @@ export function MatchDetailClient({ match, teamId, team }: { match: Match; teamI
       const { id: oldId, ...oldEventPayload } = editingEvent;
       const { id: newId, ...newEventPayload } = updatedEvent;
       
-      const payload: MatchEvent[] = [oldEventPayload, newEventPayload];
-      await matchService.updateEventToMatch(match.codeRencontre, payload);
+      const result = await updateMatchEventAction(match.codeRencontre, teamId, oldEventPayload, newEventPayload);
+      if (!result.success) {
+        console.error("Failed to update events", result.error);
+        return;
+      }
       
       setEvents(newEvents);
       resetForm();

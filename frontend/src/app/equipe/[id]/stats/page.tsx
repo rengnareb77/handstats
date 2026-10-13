@@ -1,19 +1,39 @@
-import { teamService } from "@/lib/services/team.services";
-import { Header } from "@/components/header";
-import { TeamStatsClient } from "./team-stats-client";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
-import Link from "next/link";
+import { teamService } from "@/lib/services/team.services";
 import { Button } from "@/components/ui/button";
+import { TeamStatsClient } from "./team-stats-client";
 
-export default async function TeamStatsPage({
-  params,
-}: {
+interface PageProps {
   params: Promise<{ id: string }>;
-}) {
-  const resolvedParams = await params;
-  const team = await teamService.getTeamById(resolvedParams.id, true);
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params;
+  try {
+    const team = await teamService.getTeamById(id);
+    if (!team) return { title: "Équipe non trouvée | HandStats+" };
+    return {
+      title: `Statistiques de la saison : ${team.name} | HandStats+`,
+      description: `Tableau de bord et statistiques globales de l'équipe ${team.name}`,
+    };
+  } catch {
+    return { title: "Statistiques d'équipe | HandStats+" };
+  }
+}
+
+export default async function TeamStatsPage({ params }: PageProps) {
+  const { id } = await params;
+
+  let team;
+  try {
+    team = await teamService.getTeamById(id);
+  } catch {
+    notFound();
+  }
 
   if (!team) {
     notFound();

@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -18,7 +20,25 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AddMatchDialog } from "@/components/add-match-dialog";
 import { EditTeamDialog } from "@/components/edit-team-dialog";
 import { teamService } from "@/lib/services/team.services";
+import { calculatePlayerStats } from "@/lib/player-stats";
 
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params;
+  try {
+    const team = await teamService.getTeamById(id);
+    if (!team) return { title: "Équipe non trouvée | HandStats+" };
+    return {
+      title: `${team.name} | HandStats+`,
+      description: `Statistiques, matchs et effectif de ${team.name} (${team.championship || "Sans championnat"})`,
+    };
+  } catch {
+    return { title: "Détail de l'équipe | HandStats+" };
+  }
+}
 
 // ==========================================
 // CONFIGS
@@ -41,16 +61,23 @@ function parseDate(dateStr: string) {
 // ==========================================
 // COMPOSANT PRINCIPAL
 // ==========================================
-export default async function EquipePage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function EquipePage({ params }: PageProps) {
   const { id } = await params;
-  const [team, matches] = await Promise.all([
-    teamService.getTeamById(id, true),
-    teamService.getTeamMatch(id, true)
-  ]);
+
+  let team;
+  let matches;
+  try {
+    [team, matches] = await Promise.all([
+      teamService.getTeamById(id),
+      teamService.getTeamMatch(id),
+    ]);
+  } catch {
+    notFound();
+  }
+
+  if (!team) {
+    notFound();
+  }
 
   // Préparation Matchs
   const sortedMatches = [...(matches || [])].sort(
@@ -210,12 +237,11 @@ export default async function EquipePage({
 
           <div className="flex flex-col gap-2">
             {sortedPlayers.map((player) => {
-              const isGoalkeeper = player.stats.save > 0 && player.stats.goal === 0;
-              const mainStat = isGoalkeeper ? player.stats.save : player.stats.goal;
-              const mainStatLabel = isGoalkeeper ? "arrêts" : "buts";
-              const precision = player.stats.shot > 0
-                ? Math.round((player.stats.goal / player.stats.shot) * 100)
-                : null;
+              const playerStats = calculatePlayerStats(player, matches || []);
+              const mainStat = playerStats.isGoalkeeper ? playerStats.totalSaves : playerStats.totalGoals;
+              const mainStatLabel = playerStats.isGoalkeeper ? "arrêts" : "buts";
+              const precision = playerStats.precision;
+              const matchesCount = playerStats.matchesPlayed;
 
               const initials = player.fullName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
 
@@ -237,7 +263,7 @@ export default async function EquipePage({
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-[11px] text-muted-foreground">
-                            {player.matchs?.length || 0} matchs
+                            {matchesCount} match{matchesCount > 1 ? "s" : ""}
                           </span>
                         </div>
                       </div>
