@@ -17,7 +17,11 @@ export const metadata: Metadata = {
     "Plateforme d'analyse statistique des matchs de handball — enrichissement et visualisation des feuilles de match.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="fr" suppressHydrationWarning className={cn("dark", "h-full", "antialiased", inter.variable, "font-sans", oxanium.variable, outfitHeading.variable)}>
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
