@@ -19,8 +19,8 @@ export async function addMatchAction(
   isHome: boolean
 ): Promise<ActionResult<Match>> {
   try {
-    const match = await parserService.parseMatchPDF(formData);
-    match.isHome = isHome;
+    const parsedMatch = await parserService.parseMatchPDF(formData);
+    const match = { ...parsedMatch, isHome };
 
     await teamService.addMatchToTeam(teamId, match);
 
@@ -87,7 +87,7 @@ export async function updateMatchEventAction(
   newEvent: MatchEvent
 ): Promise<ActionResult<Match>> {
   try {
-    const updatedMatch = await matchService.updateEventToMatch(matchId, [oldEvent, newEvent]);
+    const updatedMatch = await matchService.updateEventToMatch(matchId, { oldEvent, newEvent });
     updateTag(`match-${matchId}`);
     revalidatePath(`/equipe/${teamId}/matchs/${matchId}`);
     return { success: true, data: updatedMatch };
@@ -102,6 +102,34 @@ export async function updateMatchEventAction(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Erreur lors de la modification de l'événement",
+    };
+  }
+}
+
+/**
+ * Server Action pour supprimer un événement d'un match.
+ */
+export async function deleteMatchEventAction(
+  matchId: string,
+  teamId: string,
+  eventId: string
+): Promise<ActionResult<Match>> {
+  try {
+    const updatedMatch = await matchService.deleteEventFromMatch(matchId, eventId);
+    updateTag(`match-${matchId}`);
+    revalidatePath(`/equipe/${teamId}/matchs/${matchId}`);
+    return { success: true, data: updatedMatch };
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return {
+        success: false,
+        error: error.message,
+        fieldErrors: error.fieldErrors,
+      };
+    }
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erreur lors de la suppression de l'événement",
     };
   }
 }

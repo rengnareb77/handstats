@@ -1,6 +1,8 @@
 package fr.handstat.coreapi.team.web
 
 import fr.handstat.coreapi.common.exception.ResourceNotFoundException
+import fr.handstat.coreapi.match.dto.MatchResponse
+import fr.handstat.coreapi.match.dto.toResponse
 import fr.handstat.coreapi.match.model.Match
 import fr.handstat.coreapi.team.dto.CreateTeamRequest
 import fr.handstat.coreapi.team.dto.TeamResponse
@@ -39,8 +41,8 @@ class TeamController(private val teamService: TeamService) {
     }
 
     @GetMapping("/{teamId}/matches")
-    fun getMatchByTeamId(@PathVariable teamId: String): List<Match> {
-        return teamService.getTeamMatches(teamId)
+    fun getMatchByTeamId(@PathVariable teamId: String): List<MatchResponse> {
+        return teamService.getTeamMatches(teamId).map { it.toResponse() }
     }
 
     @PostMapping("/{teamId}/matches")

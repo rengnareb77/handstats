@@ -102,4 +102,108 @@ class TeamControllerTest {
             .andExpect(jsonPath("$.status").value(400))
             .andExpect(jsonPath("$.errors.name").value("Team name must not be blank"))
     }
+
+    @Test
+    fun `getAllTeams should return 200 with list of teams`() {
+        val team = Team(
+            id = "team-123",
+            name = "Paris Saint-Germain",
+            championship = "Liqui Moly StarLigue"
+        )
+        `when`(teamService.getTeams()).thenReturn(listOf(team))
+
+        mockMvc.perform(get("/teams"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[0].id").value("team-123"))
+            .andExpect(jsonPath("$[0].name").value("Paris Saint-Germain"))
+    }
+
+    @Test
+    fun `getMatchByTeamId should return 200 with list of match responses`() {
+        val match = fr.handstat.coreapi.match.model.Match(
+            codeRencontre = "M-1",
+            homeTeamName = "Team A",
+            awayTeamName = "Team B",
+            homeScore = fr.handstat.coreapi.match.model.Score(10, 20),
+            awayScore = fr.handstat.coreapi.match.model.Score(9, 18),
+            date = java.time.LocalDateTime.of(2026, 1, 1, 10, 0)
+        )
+        `when`(teamService.getTeamMatches("team-123")).thenReturn(listOf(match))
+
+        mockMvc.perform(get("/teams/team-123/matches"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[0].codeRencontre").value("M-1"))
+            .andExpect(jsonPath("$[0].homeTeamName").value("Team A"))
+    }
+
+    @Test
+    fun `addMatchToTeam should return 201 when match is added successfully`() {
+        val dummyMatch = fr.handstat.coreapi.match.model.Match(
+            codeRencontre = "M-1",
+            homeTeamName = "Team A",
+            awayTeamName = "Team B",
+            homeScore = fr.handstat.coreapi.match.model.Score(10, 20),
+            awayScore = fr.handstat.coreapi.match.model.Score(9, 18),
+            date = java.time.LocalDateTime.of(2026, 1, 1, 10, 0)
+        )
+        val teamWithMatch = Team(
+            id = "team-123",
+            name = "Team 123",
+            championship = "N2"
+        )
+        `when`(teamService.addMatchToTeamId(fr.handstat.coreapi.testutil.eq("team-123"), fr.handstat.coreapi.testutil.any(dummyMatch)))
+            .thenReturn(teamWithMatch)
+
+        val payload = """
+            {
+                "codeRencontre": "M-1",
+                "homeTeamName": "Team A",
+                "awayTeamName": "Team B",
+                "homeScore": { "halfScore": 10, "finalScore": 20 },
+                "awayScore": { "halfScore": 9, "finalScore": 18 },
+                "date": "01/01/2026 10:00"
+            }
+        """.trimIndent()
+
+        mockMvc.perform(
+            post("/teams/team-123/matches")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload)
+        )
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$.id").value("team-123"))
+    }
+
+    @Test
+    fun `addMatchToTeam should return 404 when team does not exist`() {
+        val dummyMatch = fr.handstat.coreapi.match.model.Match(
+            codeRencontre = "M-1",
+            homeTeamName = "Team A",
+            awayTeamName = "Team B",
+            homeScore = fr.handstat.coreapi.match.model.Score(10, 20),
+            awayScore = fr.handstat.coreapi.match.model.Score(9, 18),
+            date = java.time.LocalDateTime.of(2026, 1, 1, 10, 0)
+        )
+        `when`(teamService.addMatchToTeamId(fr.handstat.coreapi.testutil.eq("unknown"), fr.handstat.coreapi.testutil.any(dummyMatch)))
+            .thenReturn(null)
+
+        val payload = """
+            {
+                "codeRencontre": "M-1",
+                "homeTeamName": "Team A",
+                "awayTeamName": "Team B",
+                "homeScore": { "halfScore": 10, "finalScore": 20 },
+                "awayScore": { "halfScore": 9, "finalScore": 18 },
+                "date": "01/01/2026 10:00"
+            }
+        """.trimIndent()
+
+        mockMvc.perform(
+            post("/teams/unknown/matches")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload)
+        )
+            .andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.status").value(404))
+    }
 }

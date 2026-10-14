@@ -64,4 +64,69 @@ class PlayerControllerTest {
             .andExpect(jsonPath("$.status").value(404))
             .andExpect(jsonPath("$.detail").value("Player not found with id: unknown"))
     }
+
+    @Test
+    fun `getAllPlayers should return 200 with list of player responses`() {
+        val player = Player(
+            licenseNumber = "12345",
+            fullName = "Nikola Karabatic",
+            stats = PlayerStats(goal = 5, shot = 6),
+            teamId = "team-1"
+        )
+        `when`(playerService.getAllPlayers()).thenReturn(listOf(player))
+
+        mockMvc.perform(get("/players"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[0].licenseNumber").value("12345"))
+            .andExpect(jsonPath("$[0].fullName").value("Nikola Karabatic"))
+    }
+
+    @Test
+    fun `createPlayer should return 201 when payload is valid`() {
+        val player = Player(
+            licenseNumber = "lic-99",
+            fullName = "Elohim Prandi",
+            stats = PlayerStats(),
+            teamId = "team-1"
+        )
+        `when`(playerService.createPlayer(fr.handstat.coreapi.testutil.any(player)))
+            .thenReturn(player)
+
+        val payload = """
+            {
+                "licenseNumber": "lic-99",
+                "fullName": "Elohim Prandi",
+                "teamId": "team-1"
+            }
+        """.trimIndent()
+
+        mockMvc.perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/players")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .content(payload)
+        )
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$.licenseNumber").value("lic-99"))
+            .andExpect(jsonPath("$.fullName").value("Elohim Prandi"))
+    }
+
+    @Test
+    fun `createPlayer should return 400 when fullName is blank`() {
+        val invalidPayload = """
+            {
+                "licenseNumber": "lic-99",
+                "fullName": "",
+                "teamId": "team-1"
+            }
+        """.trimIndent()
+
+        mockMvc.perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/players")
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .content(invalidPayload)
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.status").value(400))
+            .andExpect(jsonPath("$.errors.fullName").value("fullName must not be blank"))
+    }
 }

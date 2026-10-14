@@ -45,7 +45,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Match, MatchEvent } from "@/types/match.types";
 import { Team } from "@/types/team.types";
-import { addMatchEventAction, updateMatchEventAction } from "@/actions/match.actions";
+import { addMatchEventAction, updateMatchEventAction, deleteMatchEventAction } from "@/actions/match.actions";
 
 /* ─── Types locaux ─── */
 type LocalMatchEvent = MatchEvent & { id: string };
@@ -170,8 +170,17 @@ export function MatchDetailClient({ match, teamId, team }: { match: Match; teamI
     }
   }
 
-  function handleDelete(eventId: string) {
-    setEvents((prev) => prev.filter((e) => e.id !== eventId));
+  async function handleDelete(eventId: string) {
+    try {
+      const result = await deleteMatchEventAction(match.codeRencontre, teamId, eventId);
+      if (!result.success) {
+        console.error("Failed to delete event", result.error);
+        return;
+      }
+      setEvents((prev) => prev.filter((e) => e.id !== eventId));
+    } catch (error) {
+      console.error("Failed to delete event", error);
+    }
   }
 
   function openEditDialog(event: LocalMatchEvent) {
@@ -472,9 +481,45 @@ export function MatchDetailClient({ match, teamId, team }: { match: Match; teamI
   );
 }
 
+interface EventFormProps {
+  match: Match;
+  formType: MatchEvent["type"];
+  setFormType: (type: MatchEvent["type"]) => void;
+  formTeam: "HOME" | "AWAY";
+  setFormTeam: (team: "HOME" | "AWAY") => void;
+  formPlayer: string;
+  setFormPlayer: (player: string) => void;
+  formTime: string;
+  setFormTime: (time: string) => void;
+  formShotPosition: MatchEvent["sector"] | "" | "none";
+  setFormShotPosition: (pos: MatchEvent["sector"] | "" | "none") => void;
+  formShotType: string;
+  setFormShotType: (type: string) => void;
+  onSubmit: () => void;
+  submitLabel: string;
+  onCancel: () => void;
+  onDelete?: () => void;
+}
+
 function EventForm({
-  match, formType, setFormType, formTeam, setFormTeam, formPlayer, setFormPlayer, formTime, setFormTime, formShotPosition, setFormShotPosition, formShotType, setFormShotType, onSubmit, submitLabel, onCancel, onDelete,
-}: any) {
+  match,
+  formType,
+  setFormType,
+  formTeam,
+  setFormTeam,
+  formPlayer,
+  setFormPlayer,
+  formTime,
+  setFormTime,
+  formShotPosition,
+  setFormShotPosition,
+  formShotType,
+  setFormShotType,
+  onSubmit,
+  submitLabel,
+  onCancel,
+  onDelete,
+}: EventFormProps) {
   const types: MatchEvent["type"][] = ["SHOT", "GOAL", "SEVEN_METER", "SAVE", "YELLOW_CARD", "TWO_MINUTE", "RED_CARD", "TIMEOUT"];
   const [playerOpen, setPlayerOpen] = useState(false);
   const players = formTeam === "HOME" ? match.homeTeamPlayers : match.awayTeamPlayers;
@@ -520,7 +565,7 @@ function EventForm({
                 <CommandList>
                   <CommandEmpty>Aucun joueur trouvé.</CommandEmpty>
                   <CommandGroup>
-                    {players.map((p: any) => (
+                    {players.map((p) => (
                       <CommandItem key={p.licenseNumber || p.fullName} value={p.fullName} onSelect={() => { setFormPlayer(p.fullName); setPlayerOpen(false); }}>
                         {p.fullName}
                         {formPlayer === p.fullName && <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} className="ml-auto pointer-events-none size-4 text-foreground" />}

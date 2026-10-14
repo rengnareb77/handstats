@@ -31,8 +31,7 @@ export const matchService = {
     matchId: string,
     options?: ApiFetchOptions
   ) => {
-    const promises = players.map((p) => matchService.addPlayerStats(p, teamId, matchId, options));
-    await Promise.all(promises);
+    return apiClient.post<void>(`/matches/${matchId}/stats/${teamId}/batch`, players, options);
   },
 
   addEventToMatch: (
@@ -45,9 +44,17 @@ export const matchService = {
 
   updateEventToMatch: (
     matchId: string,
-    events: MatchEvent[],
+    payload: { oldEvent: MatchEvent; newEvent: MatchEvent },
     options?: ApiFetchOptions
   ) => {
-    return apiClient.put<Match>(`/matches/${matchId}/events`, events, options);
+    return apiClient.put<Match>(`/matches/${matchId}/events`, payload, options);
+  },
+
+  deleteEventFromMatch: (
+    matchId: string,
+    eventId: string,
+    options?: ApiFetchOptions
+  ) => {
+    return apiClient.delete<Match>(`/matches/${matchId}/events/${eventId}`, options);
   },
 };
