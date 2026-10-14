@@ -16,7 +16,7 @@ describe("EditableMatchItem component", () => {
     events: [],
   };
 
-  it("should render opponent name and final score correctly", () => {
+  it("should render opponent name and final score correctly on win", () => {
     render(<EditableMatchItem match={match} teamId="team-1" />);
 
     // When isHome is true, opponent is awayTeamName
@@ -33,5 +33,29 @@ describe("EditableMatchItem component", () => {
 
     // After switching to Ext, opponent becomes homeTeamName
     expect(screen.getByText("INAM SG")).toBeInTheDocument();
+
+    // Clicking already active button does nothing
+    fireEvent.click(extButton);
+    expect(screen.getByText("INAM SG")).toBeInTheDocument();
+  });
+
+  it("should render draw and loss properly", () => {
+    const drawMatch: Match = {
+      ...match,
+      homeScore: { halfScore: 10, finalScore: 20 },
+      awayScore: { halfScore: 10, finalScore: 20 },
+    };
+
+    const { rerender } = render(<EditableMatchItem match={drawMatch} teamId="team-1" />);
+    expect(screen.getByText("20 - 20")).toBeInTheDocument();
+
+    const lossMatch: Match = {
+      ...match,
+      homeScore: { halfScore: 10, finalScore: 18 },
+      awayScore: { halfScore: 10, finalScore: 25 },
+    };
+
+    rerender(<EditableMatchItem match={lossMatch} teamId="team-1" />);
+    expect(screen.getByText("18 - 25")).toBeInTheDocument();
   });
 });

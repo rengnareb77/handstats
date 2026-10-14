@@ -35,4 +35,61 @@ class PlayerServiceTest {
 
         verify(mongoTemplate).updateFirst(expectedQuery, expectedUpdate, Player::class.java)
     }
+
+    @Test
+    fun `getAllPlayers should return list of players`() {
+        val player = Player(
+            licenseNumber = "lic-1",
+            fullName = "Player 1",
+            stats = PlayerStats(),
+            teamId = "team-1"
+        )
+        org.mockito.Mockito.`when`(playerRepository.findAll()).thenReturn(listOf(player))
+
+        val result = playerService.getAllPlayers()
+
+        org.junit.jupiter.api.Assertions.assertEquals(1, result.size)
+        org.junit.jupiter.api.Assertions.assertEquals("lic-1", result[0].licenseNumber)
+    }
+
+    @Test
+    fun `getPlayerById should return player when found`() {
+        val player = Player(
+            licenseNumber = "lic-1",
+            fullName = "Player 1",
+            stats = PlayerStats(),
+            teamId = "team-1"
+        )
+        org.mockito.Mockito.`when`(playerRepository.findById("lic-1")).thenReturn(java.util.Optional.of(player))
+
+        val result = playerService.getPlayerById("lic-1")
+
+        org.junit.jupiter.api.Assertions.assertNotNull(result)
+        org.junit.jupiter.api.Assertions.assertEquals("lic-1", result?.licenseNumber)
+    }
+
+    @Test
+    fun `getPlayerById should return null when not found`() {
+        org.mockito.Mockito.`when`(playerRepository.findById("unknown")).thenReturn(java.util.Optional.empty())
+
+        val result = playerService.getPlayerById("unknown")
+
+        org.junit.jupiter.api.Assertions.assertNull(result)
+    }
+
+    @Test
+    fun `createPlayer should save and return player`() {
+        val player = Player(
+            licenseNumber = "lic-1",
+            fullName = "Player 1",
+            stats = PlayerStats(),
+            teamId = "team-1"
+        )
+        org.mockito.Mockito.`when`(playerRepository.save(player)).thenReturn(player)
+
+        val result = playerService.createPlayer(player)
+
+        org.junit.jupiter.api.Assertions.assertEquals("lic-1", result.licenseNumber)
+        verify(playerRepository).save(player)
+    }
 }

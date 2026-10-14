@@ -1,6 +1,7 @@
 package fr.handstat.coreapi.team.dto
 
-import fr.handstat.coreapi.match.model.Match
+import fr.handstat.coreapi.match.dto.MatchResponse
+import fr.handstat.coreapi.match.dto.toResponse
 import fr.handstat.coreapi.player.dto.PlayerResponse
 import fr.handstat.coreapi.player.dto.toResponse
 import fr.handstat.coreapi.team.model.Team
@@ -18,7 +19,7 @@ data class TeamResponse(
     val name: String,
     val championship: String,
     val players: List<PlayerResponse> = emptyList(),
-    val matchs: List<Match> = emptyList()
+    val matchs: List<MatchResponse> = emptyList()
 )
 
 fun Team.toResponse(): TeamResponse = TeamResponse(
@@ -26,7 +27,7 @@ fun Team.toResponse(): TeamResponse = TeamResponse(
     name = this.name,
     championship = this.championship,
     players = this.players.map { it.toResponse() },
-    matchs = this.matchs
+    matchs = this.matchs.map { it.toResponse() }
 )
 
 fun CreateTeamRequest.toDomain(): Team = Team(

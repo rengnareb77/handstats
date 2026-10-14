@@ -17,8 +17,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Team } from "@/types/team.types";
 
-export function EditTeamDialog({ team }: { team: any }) {
+export function EditTeamDialog({ team }: { team: Team }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(team.name);
   const [championship, setChampionship] = useState(team.championship || "");

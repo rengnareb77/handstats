@@ -101,6 +101,16 @@ describe("player-stats calculation", () => {
       expect(result).toHaveLength(1);
       expect(result[0].codeRencontre).toBe("M1");
     });
+
+    it("should return empty array when player has no licenseNumber and no player.matchs", () => {
+      const playerWithoutLicense: Player = {
+        ...dummyPlayer,
+        licenseNumber: "",
+        matchs: [],
+      };
+      const result = calculatePlayerMatches(playerWithoutLicense, [sampleMatch1]);
+      expect(result).toEqual([]);
+    });
   });
 
   describe("calculatePlayerStats", () => {

@@ -80,4 +80,17 @@ class MatchService(
         val newEvents = match.events.toMutableList().apply { set(oldEventIndex, newEvent) }
         return matchRepository.save(match.copy(events = newEvents))
     }
+
+    fun deleteEvent(matchId: String, eventId: String): Match {
+        val match = getMatchById(matchId) ?: throw ResourceNotFoundException("Match not found with id: $matchId")
+        val newEvents = match.events.filterNot { it.id == eventId }
+        if (newEvents.size == match.events.size) {
+            throw ResourceNotFoundException("Event not found with id: $eventId in match: $matchId")
+        }
+        return matchRepository.save(match.copy(events = newEvents))
+    }
+
+    fun addAllMatchPlayers(matchPlayers: List<MatchPlayer>, teamId: String, matchId: String) {
+        matchPlayers.forEach { addMatchPlayer(it, teamId, matchId) }
+    }
 }

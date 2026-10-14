@@ -49,3 +49,31 @@ fun CreateMatchRequest.toDomain(): Match = Match(
     awayTeamPlayers = this.awayTeamPlayers,
     events = this.events
 )
+
+data class MatchResponse(
+    val codeRencontre: String,
+    val homeTeamName: String,
+    val awayTeamName: String,
+    val homeScore: Score,
+    val awayScore: Score,
+    val isHome: Boolean = true,
+    @JsonFormat(pattern = "dd/MM/yyyy HH:mm")
+    val date: LocalDateTime,
+    val homeTeamPlayers: List<MatchPlayer> = emptyList(),
+    val awayTeamPlayers: List<MatchPlayer> = emptyList(),
+    val events: List<MatchEvent> = emptyList()
+)
+
+fun Match.toResponse(): MatchResponse = MatchResponse(
+    codeRencontre = this.codeRencontre,
+    homeTeamName = this.homeTeamName,
+    awayTeamName = this.awayTeamName,
+    homeScore = this.homeScore,
+    awayScore = this.awayScore,
+    isHome = this.isHome,
+    date = this.date,
+    homeTeamPlayers = this.homeTeamPlayers,
+    awayTeamPlayers = this.awayTeamPlayers,
+    events = this.events
+)
+
