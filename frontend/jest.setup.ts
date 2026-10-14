@@ -20,3 +20,22 @@ if (typeof global.Headers === "undefined" && typeof globalThis.Headers !== "unde
 if (typeof global.Request === "undefined" && typeof globalThis.Request !== "undefined") {
   global.Request = globalThis.Request;
 }
+
+// Mock next/navigation pour Jest
+jest.mock("next/navigation", () => {
+  const actual = jest.requireActual("next/navigation");
+  return {
+    ...actual,
+    useRouter: () => ({
+      push: jest.fn(),
+      replace: jest.fn(),
+      back: jest.fn(),
+      forward: jest.fn(),
+      refresh: jest.fn(),
+      prefetch: jest.fn(),
+    }),
+    useSearchParams: () => new URLSearchParams(),
+    usePathname: () => "",
+  };
+});
+

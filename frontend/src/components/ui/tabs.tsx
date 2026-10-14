@@ -4,11 +4,123 @@ import { Tabs as TabsPrimitive } from "@base-ui/react/tabs"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
+import * as React from "react"
+import { useSearchParams } from "next/navigation"
+
+export interface TabsProps extends TabsPrimitive.Root.Props {
+  urlParam?: string
+}
+
+function UrlTabsInner({
+  urlParam,
+  value: controlledValue,
+  defaultValue,
+  onValueChange,
+  ...props
+}: TabsProps & { urlParam: string }) {
+  const searchParams = useSearchParams()
+
+  const getUrlTab = React.useCallback(() => {
+    if (typeof window !== "undefined") {
+      const param = new URLSearchParams(window.location.search).get(urlParam)
+      if (param) return param
+    }
+    const param = searchParams?.get(urlParam)
+    return param || undefined
+  }, [searchParams, urlParam])
+
+  const [activeTab, setActiveTab] = React.useState<TabsPrimitive.Root.Props["value"]>(() => {
+    if (controlledValue !== undefined) return controlledValue
+    return getUrlTab() ?? defaultValue
+  })
+
+  // Sync if controlledValue changes
+  React.useEffect(() => {
+    if (controlledValue !== undefined) {
+      setActiveTab(controlledValue)
+    }
+  }, [controlledValue])
+
+  // Sync if browser back/forward buttons are pressed (popstate)
+  React.useEffect(() => {
+    if (controlledValue !== undefined) return
+
+    const handlePopState = () => {
+      const urlTab = new URLSearchParams(window.location.search).get(urlParam)
+      setActiveTab(urlTab ?? defaultValue)
+    }
+
+    window.addEventListener("popstate", handlePopState)
+    return () => window.removeEventListener("popstate", handlePopState)
+  }, [urlParam, defaultValue, controlledValue])
+
+  // Also sync if searchParams explicitly specifies a tab from Next.js router navigation
+  React.useEffect(() => {
+    if (controlledValue !== undefined) return
+    const param = searchParams?.get(urlParam)
+    if (param) {
+      setActiveTab(param)
+    }
+  }, [searchParams, urlParam, controlledValue])
+
+  const handleValueChange = React.useCallback(
+    (newVal: any, eventDetails: any) => {
+      setActiveTab(newVal)
+      onValueChange?.(newVal, eventDetails)
+
+      if (typeof window !== "undefined" && urlParam) {
+        const url = new URL(window.location.href)
+        const strVal = String(newVal)
+        if (defaultValue !== undefined && strVal === String(defaultValue)) {
+          url.searchParams.delete(urlParam)
+        } else {
+          url.searchParams.set(urlParam, strVal)
+        }
+        const newUrl = url.pathname + (url.search ? url.search : "") + (url.hash || "")
+        window.history.replaceState(null, "", newUrl)
+      }
+    },
+    [defaultValue, onValueChange, urlParam]
+  )
+
+  return (
+    <TabsPrimitive.Root
+      value={activeTab}
+      onValueChange={handleValueChange}
+      {...props}
+    />
+  )
+}
+
+function UrlTabs(props: TabsProps & { urlParam: string }) {
+  return (
+    <React.Suspense fallback={<TabsPrimitive.Root {...props} />}>
+      <UrlTabsInner {...props} />
+    </React.Suspense>
+  )
+}
+
 function Tabs({
   className,
   orientation = "horizontal",
+  urlParam,
   ...props
-}: TabsPrimitive.Root.Props) {
+}: TabsProps) {
+  if (urlParam) {
+    return (
+      <UrlTabs
+        urlParam={urlParam}
+        data-slot="tabs"
+        data-orientation={orientation}
+        className={cn(
+          "group/tabs flex gap-2 data-horizontal:flex-col",
+          className
+        )}
+        {...props}
+      />
+    )
+  }
+
   return (
     <TabsPrimitive.Root
       data-slot="tabs"
