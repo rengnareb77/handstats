@@ -123,7 +123,7 @@ export default async function JoueurDetailPage({ params }: PageProps) {
     <main className="flex-1 flex flex-col min-h-dvh">
       {/* ─── Header ─── */}
       <Header
-        backHref={`/equipe/${id}`}
+        backHref={`/equipe/${id}?tab=joueurs`}
         title={`${firstName} ${name}`}
       />
 

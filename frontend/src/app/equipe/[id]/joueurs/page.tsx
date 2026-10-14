@@ -75,7 +75,7 @@ export default async function JoueursPage({
   return (
     <main className="flex-1 flex flex-col min-h-dvh">
       {/* ─── Header ─── */}
-      <Header backHref={`/equipe/${id}`} title="Joueurs" />
+      <Header backHref={`/equipe/${id}?tab=joueurs`} title="Joueurs" />
 
       {/* ─── Content ─── */}
       <section className="flex-1 flex flex-col px-5 pt-6 pb-8">

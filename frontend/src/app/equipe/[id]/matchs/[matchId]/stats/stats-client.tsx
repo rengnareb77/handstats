@@ -7,8 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
+import { BackButton } from "@/components/back-button";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, LabelList, PieChart, Pie, Cell, Label, LineChart, Line, ReferenceLine } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
@@ -162,7 +161,7 @@ export function StatsClient({ match, teamId, team, matchId }: { match: Match; te
   };
 
   return (
-    <Tabs defaultValue="players" className="flex-1 flex flex-col">
+    <Tabs defaultValue="players" urlParam="tab" className="flex-1 flex flex-col">
       {/* HEADER COMPACT ET COLLANT */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border pb-3 pt-3 px-5 mb-4 flex flex-col gap-4">
 
@@ -171,11 +170,7 @@ export function StatsClient({ match, teamId, team, matchId }: { match: Match; te
 
           {/* Retour et Titre */}
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <Link href={`/equipe/${teamId}/matchs/${matchId}`} className="shrink-0">
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-muted/50">
-                <HugeiconsIcon icon={ArrowLeft01Icon} size={18} />
-              </Button>
-            </Link>
+            <BackButton href={`/equipe/${teamId}/matchs/${matchId}?tab=stats`} />
             <div className="leading-tight min-w-0 flex-1">
               <h1 className="text-lg font-bold tracking-tight font-heading truncate">Statistiques</h1>
               <p className="text-[11px] text-muted-foreground truncate">{match.homeTeamName} - {match.awayTeamName}</p>

@@ -24,6 +24,7 @@ import { calculatePlayerStats } from "@/lib/player-stats";
 
 interface PageProps {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ tab?: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -61,8 +62,13 @@ function parseDate(dateStr: string) {
 // ==========================================
 // COMPOSANT PRINCIPAL
 // ==========================================
-export default async function EquipePage({ params }: PageProps) {
+export default async function EquipePage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const tabParam = (await searchParams)?.tab;
+  const initialTab =
+    tabParam && ["stats", "matchs", "joueurs"].includes(tabParam)
+      ? tabParam
+      : "stats";
 
   let team;
   let matches;
@@ -94,7 +100,7 @@ export default async function EquipePage({ params }: PageProps) {
 
   return (
     <main className="flex-1 flex flex-col min-h-dvh">
-      <Tabs defaultValue="stats" className="flex-1 flex flex-col">
+      <Tabs defaultValue={initialTab} urlParam="tab" className="flex-1 flex flex-col">
         {/* ─── Header avec Onglets Intégrés ─── */}
         <Header
           backHref="/"
@@ -107,8 +113,8 @@ export default async function EquipePage({ params }: PageProps) {
           rightContent={<EditTeamDialog team={team} />}
           bottomContent={
             <TabsList className="w-full grid grid-cols-3 h-9">
-              <TabsTrigger value="stats" className="text-xs">Statistique</TabsTrigger>
-              <TabsTrigger value="matchs" className="text-xs">Match</TabsTrigger>
+              <TabsTrigger value="stats" className="text-xs">Statistiques</TabsTrigger>
+              <TabsTrigger value="matchs" className="text-xs">Matchs</TabsTrigger>
               <TabsTrigger value="joueurs" className="text-xs">Joueurs</TabsTrigger>
             </TabsList>
           }

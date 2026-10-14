@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import { teamService } from "@/lib/services/team.services";
-import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/back-button";
 import { TeamStatsClient } from "./team-stats-client";
 
 interface PageProps {
@@ -48,11 +45,7 @@ export default async function TeamStatsPage({ params }: PageProps) {
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border pb-3 pt-3 px-5 mb-4 flex flex-col gap-4">
         <div className="flex flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <Link href={`/equipe/${team.id}`} className="shrink-0">
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-muted/50">
-                <HugeiconsIcon icon={ArrowLeft01Icon} size={18} />
-              </Button>
-            </Link>
+            <BackButton href={`/equipe/${team.id}?tab=stats`} />
             <div className="leading-tight min-w-0 flex-1">
               <h1 className="text-lg font-bold tracking-tight font-heading text-foreground truncate">
                 Tableau de bord : {team.name}
