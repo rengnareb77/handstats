@@ -29,3 +29,6 @@ target/
 __pycache__/
 *.pyc
 .venv/
+
+# Agents
+.agents

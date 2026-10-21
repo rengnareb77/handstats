@@ -16,10 +16,10 @@ import {
   Timer02Icon,
   PauseIcon,
   ChartColumnIncreasingIcon,
-  ArrowLeft01Icon,
 } from "@hugeicons/core-free-icons";
 
 import { Header } from "@/components/header";
+import { BackButton } from "@/components/back-button";
 import { EditMatchDialog } from "@/components/edit-match-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -45,7 +45,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Match, MatchEvent } from "@/types/match.types";
 import { Team } from "@/types/team.types";
-import { matchService } from "@/lib/services/match.services";
+import { addMatchEventAction, updateMatchEventAction, deleteMatchEventAction } from "@/actions/match.actions";
 
 /* ─── Types locaux ─── */
 type LocalMatchEvent = MatchEvent & { id: string };
@@ -116,7 +116,11 @@ export function MatchDetailClient({ match, teamId, team }: { match: Match; teamI
     };
 
     try {
-      await matchService.addEventToMatch(match.codeRencontre, newEventData);
+      const result = await addMatchEventAction(match.codeRencontre, teamId, newEventData);
+      if (!result.success) {
+        console.error("Failed to add event", result.error);
+        return;
+      }
       const newEvent: LocalMatchEvent = {
         ...newEventData,
         id: `local-e${nextId++}`,
@@ -152,8 +156,11 @@ export function MatchDetailClient({ match, teamId, team }: { match: Match; teamI
       const { id: oldId, ...oldEventPayload } = editingEvent;
       const { id: newId, ...newEventPayload } = updatedEvent;
       
-      const payload: MatchEvent[] = [oldEventPayload, newEventPayload];
-      await matchService.updateEventToMatch(match.codeRencontre, payload);
+      const result = await updateMatchEventAction(match.codeRencontre, teamId, oldEventPayload, newEventPayload);
+      if (!result.success) {
+        console.error("Failed to update events", result.error);
+        return;
+      }
       
       setEvents(newEvents);
       resetForm();
@@ -163,8 +170,17 @@ export function MatchDetailClient({ match, teamId, team }: { match: Match; teamI
     }
   }
 
-  function handleDelete(eventId: string) {
-    setEvents((prev) => prev.filter((e) => e.id !== eventId));
+  async function handleDelete(eventId: string) {
+    try {
+      const result = await deleteMatchEventAction(match.codeRencontre, teamId, eventId);
+      if (!result.success) {
+        console.error("Failed to delete event", result.error);
+        return;
+      }
+      setEvents((prev) => prev.filter((e) => e.id !== eventId));
+    } catch (error) {
+      console.error("Failed to delete event", error);
+    }
   }
 
   function openEditDialog(event: LocalMatchEvent) {
@@ -208,16 +224,12 @@ export function MatchDetailClient({ match, teamId, team }: { match: Match; teamI
 
   return (
     <main className="flex-1 flex flex-col min-h-dvh">
-      <Tabs defaultValue="stats" className="flex-1 flex flex-col">
+      <Tabs defaultValue="stats" urlParam="tab" className="flex-1 flex flex-col">
         {/* HEADER COMPACT ET COLLANT */}
         <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border pb-3 pt-3 px-5 mb-4 flex flex-col gap-4">
           <div className="flex flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <Link href={`/equipe/${teamId}`} className="shrink-0">
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-muted/50">
-                  <HugeiconsIcon icon={ArrowLeft01Icon} size={18} />
-                </Button>
-              </Link>
+              <BackButton href={`/equipe/${teamId}?tab=matchs`} />
               <div className="leading-tight min-w-0 flex-1">
                 <h1 className="text-lg font-bold tracking-tight font-heading text-foreground truncate">
                   {match.homeTeamName} - {match.awayTeamName}
@@ -465,9 +477,45 @@ export function MatchDetailClient({ match, teamId, team }: { match: Match; teamI
   );
 }
 
+interface EventFormProps {
+  match: Match;
+  formType: MatchEvent["type"];
+  setFormType: (type: MatchEvent["type"]) => void;
+  formTeam: "HOME" | "AWAY";
+  setFormTeam: (team: "HOME" | "AWAY") => void;
+  formPlayer: string;
+  setFormPlayer: (player: string) => void;
+  formTime: string;
+  setFormTime: (time: string) => void;
+  formShotPosition: MatchEvent["sector"] | "" | "none";
+  setFormShotPosition: (pos: MatchEvent["sector"] | "" | "none") => void;
+  formShotType: string;
+  setFormShotType: (type: string) => void;
+  onSubmit: () => void;
+  submitLabel: string;
+  onCancel: () => void;
+  onDelete?: () => void;
+}
+
 function EventForm({
-  match, formType, setFormType, formTeam, setFormTeam, formPlayer, setFormPlayer, formTime, setFormTime, formShotPosition, setFormShotPosition, formShotType, setFormShotType, onSubmit, submitLabel, onCancel, onDelete,
-}: any) {
+  match,
+  formType,
+  setFormType,
+  formTeam,
+  setFormTeam,
+  formPlayer,
+  setFormPlayer,
+  formTime,
+  setFormTime,
+  formShotPosition,
+  setFormShotPosition,
+  formShotType,
+  setFormShotType,
+  onSubmit,
+  submitLabel,
+  onCancel,
+  onDelete,
+}: EventFormProps) {
   const types: MatchEvent["type"][] = ["SHOT", "GOAL", "SEVEN_METER", "SAVE", "YELLOW_CARD", "TWO_MINUTE", "RED_CARD", "TIMEOUT"];
   const [playerOpen, setPlayerOpen] = useState(false);
   const players = formTeam === "HOME" ? match.homeTeamPlayers : match.awayTeamPlayers;
@@ -513,7 +561,7 @@ function EventForm({
                 <CommandList>
                   <CommandEmpty>Aucun joueur trouvé.</CommandEmpty>
                   <CommandGroup>
-                    {players.map((p: any) => (
+                    {players.map((p) => (
                       <CommandItem key={p.licenseNumber || p.fullName} value={p.fullName} onSelect={() => { setFormPlayer(p.fullName); setPlayerOpen(false); }}>
                         {p.fullName}
                         {formPlayer === p.fullName && <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} className="ml-auto pointer-events-none size-4 text-foreground" />}

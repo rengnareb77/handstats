@@ -1,8 +1,5 @@
-import Link from "next/link";
 import { ReactNode } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
-import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/back-button";
 
 interface HeaderProps {
   title?: ReactNode;
@@ -31,11 +28,7 @@ export function Header({
         <div className="flex items-center justify-start gap-3 flex-1 min-w-0">
           {leftContent ||
             (backHref ? (
-              <Link href={backHref} className="shrink-0">
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-muted/50" aria-label="Retour">
-                  <HugeiconsIcon icon={ArrowLeft01Icon} size={18} />
-                </Button>
-              </Link>
+              <BackButton href={backHref} />
             ) : null)}
 
           {(title || subtitle) && (

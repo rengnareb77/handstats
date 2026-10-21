@@ -4,7 +4,8 @@ import { Player } from "./player.types";
 export interface Team {
     id: string;
     name: string;
-    championship: string;
+    championship?: string;
+    championshipId?: string;
     players: Player[];
     matchs: Match[];
 }

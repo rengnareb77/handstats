@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Add01Icon,
@@ -9,7 +8,7 @@ import {
   Link04Icon,
 } from "@hugeicons/core-free-icons";
 
-import { parserService } from "@/lib/services/parser.services";
+import { addMatchAction } from "@/actions/match.actions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,21 +24,22 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { teamService } from "@/lib/services/team.services";
-import { matchService } from "@/lib/services/match.services";
-import { PlayerStats } from "@/types/player.types";
-import { Match } from "@/types/match.types";
 
 export function AddMatchDialog({ teamId }: { teamId: string }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("upload");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isHome, setIsHome] = useState(true);
-  const router = useRouter();
-
 
   return (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+    <Dialog
+      open={dialogOpen}
+      onOpenChange={(open) => {
+        setDialogOpen(open);
+        if (!open) setErrorMessage(null);
+      }}
+    >
       <DialogTrigger
         render={
           <Button
@@ -65,43 +65,77 @@ export function AddMatchDialog({ teamId }: { teamId: string }) {
           onSubmit={async (e) => {
             e.preventDefault();
             setIsSubmitting(true);
+            setErrorMessage(null);
 
             const formData = new FormData();
 
             if (activeTab === "upload") {
               const fileInput = e.currentTarget.querySelector<HTMLInputElement>("#pdf-upload");
               const file = fileInput?.files?.[0];
-              if (file) {
-                formData.append("file", file);
+              if (!file) {
+                setErrorMessage("Veuillez sélectionner un fichier PDF.");
+                setIsSubmitting(false);
+                return;
               }
+              formData.append("file", file);
             } else if (activeTab === "link") {
               const urlInput = e.currentTarget.querySelector<HTMLInputElement>("#pdf-url");
               const url = urlInput?.value;
-              if (url) {
-                formData.append("url", url);
+              if (!url) {
+                setErrorMessage("Veuillez renseigner l'URL de la feuille de match.");
+                setIsSubmitting(false);
+                return;
               }
+              formData.append("url", url);
             }
 
             try {
-              let match = await parserService.parseMatchPDF(formData, false);
-              match.isHome = isHome;
-              await teamService.addMatchToTeam(teamId, match, false)
-              const players = isHome ? match.homeTeamPlayers : match.awayTeamPlayers;
-              await matchService.addAllPlayersStats(players, teamId, match.codeRencontre, false);
-              setDialogOpen(false);
-              router.refresh();
+              const result = await addMatchAction(teamId, formData, isHome);
+              if (result.success) {
+                setDialogOpen(false);
+              } else {
+                setErrorMessage(result.error || "Erreur lors de l'import du match");
+              }
             } catch (error) {
-              console.error("Erreur lors de l'ajout du match:", error);
+              setErrorMessage(
+                error instanceof Error ? error.message : "Erreur inattendue"
+              );
             } finally {
               setIsSubmitting(false);
             }
           }}
         >
+          {errorMessage && (
+            <div className="text-sm font-medium text-destructive bg-destructive/10 border border-destructive/20 p-3 rounded-xl">
+              {errorMessage}
+            </div>
+          )}
+
           <div className="flex flex-col gap-2.5">
             <Label>Où s'est joué ce match ?</Label>
             <div className="flex bg-muted/50 p-1 rounded-xl">
-              <button type="button" className={`flex-1 text-xs py-2 rounded-lg font-medium transition-colors ${isHome ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`} onClick={() => setIsHome(true)}>Domicile</button>
-              <button type="button" className={`flex-1 text-xs py-2 rounded-lg font-medium transition-colors ${!isHome ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`} onClick={() => setIsHome(false)}>Extérieur</button>
+              <button
+                type="button"
+                className={`flex-1 text-xs py-2 rounded-lg font-medium transition-colors ${
+                  isHome
+                    ? "bg-background shadow-sm text-foreground"
+                    : "text-muted-foreground"
+                }`}
+                onClick={() => setIsHome(true)}
+              >
+                Domicile
+              </button>
+              <button
+                type="button"
+                className={`flex-1 text-xs py-2 rounded-lg font-medium transition-colors ${
+                  !isHome
+                    ? "bg-background shadow-sm text-foreground"
+                    : "text-muted-foreground"
+                }`}
+                onClick={() => setIsHome(false)}
+              >
+                Extérieur
+              </button>
             </div>
           </div>
 
@@ -159,7 +193,7 @@ export function AddMatchDialog({ teamId }: { teamId: string }) {
               }
             />
             <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
-              {isSubmitting ? "Ajout en cours..." : "Ajouter le match"}
+              {isSubmitting ? "Importation en cours..." : "Ajouter le match"}
             </Button>
           </DialogFooter>
         </form>

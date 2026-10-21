@@ -15,6 +15,7 @@ export interface PlayerStats {
     shot: number,
     save: number,
     avertissement: number,
+    avertissements?: number,
     twoMinutes: number,
     redCard: number,
 }

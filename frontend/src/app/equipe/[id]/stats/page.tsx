@@ -1,19 +1,36 @@
-import { teamService } from "@/lib/services/team.services";
-import { Header } from "@/components/header";
-import { TeamStatsClient } from "./team-stats-client";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { teamService } from "@/lib/services/team.services";
+import { BackButton } from "@/components/back-button";
+import { TeamStatsClient } from "./team-stats-client";
 
-export default async function TeamStatsPage({
-  params,
-}: {
+interface PageProps {
   params: Promise<{ id: string }>;
-}) {
-  const resolvedParams = await params;
-  const team = await teamService.getTeamById(resolvedParams.id, true);
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params;
+  try {
+    const team = await teamService.getTeamById(id);
+    if (!team) return { title: "Équipe non trouvée | HandStats+" };
+    return {
+      title: `Statistiques de la saison : ${team.name} | HandStats+`,
+      description: `Tableau de bord et statistiques globales de l'équipe ${team.name}`,
+    };
+  } catch {
+    return { title: "Statistiques d'équipe | HandStats+" };
+  }
+}
+
+export default async function TeamStatsPage({ params }: PageProps) {
+  const { id } = await params;
+
+  let team;
+  try {
+    team = await teamService.getTeamById(id);
+  } catch {
+    notFound();
+  }
 
   if (!team) {
     notFound();
@@ -28,11 +45,7 @@ export default async function TeamStatsPage({
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border pb-3 pt-3 px-5 mb-4 flex flex-col gap-4">
         <div className="flex flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <Link href={`/equipe/${team.id}`} className="shrink-0">
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-muted/50">
-                <HugeiconsIcon icon={ArrowLeft01Icon} size={18} />
-              </Button>
-            </Link>
+            <BackButton href={`/equipe/${team.id}?tab=stats`} />
             <div className="leading-tight min-w-0 flex-1">
               <h1 className="text-lg font-bold tracking-tight font-heading text-foreground truncate">
                 Tableau de bord : {team.name}
